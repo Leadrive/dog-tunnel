@@ -1,17 +1,18 @@
 package nat
 
-import "github.com/vzex/dog-tunnel/ikcp"
-import "github.com/klauspost/reedsolomon"
-import "github.com/vzex/zappy"
-
 import (
 	"errors"
 	"flag"
 	"log"
-	//"math/rand"
 	"net"
 	"time"
+
+	"../ikcp"
+	"github.com/klauspost/reedsolomon"
+	// "github.com/vzex/zappy"
 )
+
+//"math/rand"
 
 const (
 	Ping byte = 1
@@ -104,7 +105,7 @@ func DefaultKcpSetting() *KcpSetting {
 
 func newConn(sock *net.UDPConn, local, remote net.Addr, id int) *Conn {
 	sock.SetDeadline(time.Time{})
-	conn := &Conn{conn: sock, local: local, remote: remote, closed: false, quit: make(chan bool), tmp: make([]byte, CacheBuffSize*2), tmp2: make([]byte, CacheBuffSize), sendChan: make(chan string, 10), checkCanWrite: make(chan chan bool), readChan: make(chan cache), overTime: time.Now().Unix() + 30, fecWriteId: 0, fecSendC: 0}
+	conn := &Conn{conn: sock, local: local, remote: remote, closed: false, quit: make(chan bool), tmp: make([]byte, CacheBuffSize*2), tmp2: make([]byte, CacheBuffSize), sendChan: make(chan string, 10), checkCanWrite: make(chan chan bool), readChan: make(chan cache), overTime: time.Now().Unix() + 30000, fecWriteId: 0, fecSendC: 0}
 	debug("create", id)
 	conn.kcp = ikcp.Ikcp_create(uint32(id), conn)
 	conn.kcp.Output = udp_output
@@ -159,7 +160,8 @@ func (c *Conn) onUpdate() {
 				}
 			}
 			var b []byte
-			if *bCompress {
+			// TODO: Rocky
+			/*if *bCompress {
 				_b, _er := zappy.Decode(nil, c.tmp[:n])
 				if _er != nil {
 					log.Println("decompress fail", _er.Error())
@@ -167,10 +169,10 @@ func (c *Conn) onUpdate() {
 				}
 				//log.Println("decompress", len(_b), n)
 				b = _b
-			} else {
-				b = make([]byte, n)
-				copy(b, c.tmp[:n])
-			}
+			} else {*/
+			b = make([]byte, n)
+			copy(b, c.tmp[:n])
+			// }
 			select {
 			case recvChan <- b:
 			case <-c.quit:
@@ -282,7 +284,7 @@ out:
 				break
 			}
 		case b := <-recvChan:
-			c.overTime = time.Now().Unix() + 30
+			c.overTime = time.Now().Unix() + 30000
 			if c.fecR != nil {
 				if len(b) <= 7 {
 					break
@@ -440,7 +442,8 @@ func (c *Conn) Read(b []byte) (int, error) {
 }
 
 func (c *Conn) writeTo(b []byte) {
-	if *bCompress {
+	// TODO: Rocky
+	/*if *bCompress {
 		enc, er := zappy.Encode(c.compressCache, b)
 		if er != nil {
 			log.Println("compress error", er.Error())
@@ -449,9 +452,9 @@ func (c *Conn) writeTo(b []byte) {
 		}
 		//log.Println("compress", len(b), len(enc))
 		c.conn.WriteTo(enc, c.remote)
-	} else {
-		c.conn.WriteTo(b, c.remote)
-	}
+	} else {*/
+	c.conn.WriteTo(b, c.remote)
+	// }
 }
 func (c *Conn) output(b []byte) {
 	if c.fecW == nil {
