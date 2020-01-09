@@ -78,10 +78,11 @@ func clientConn(conn net.Conn) {
 	}
 	log.Printf("read file at seek: %d\n", off)
 
+	data := make([]byte, BLOCK_SIZE)
 	for {
 		// 每次发送定义的字节大小的内容
-		data := make([]byte, BLOCK_SIZE)
 		n, err := fp.Read(data)
+		log.Printf("Read n=%d", n)
 		if err != nil {
 			if err == io.EOF {
 				// 如果已经读取完文件内容

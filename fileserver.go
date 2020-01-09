@@ -99,10 +99,11 @@ func serverConn(conn net.Conn) error {
 			return err
 		}
 		n, err := Read(conn, buf)
+		log.Printf("Read n=%d", n)
 		// n, err := conn.Read(buf)
 		if err != nil {
 			if err == io.EOF {
-				log.Println("server io EOF, n=%d\n", n)
+				log.Printf("server io EOF, n=%d\n", n)
 				break
 			}
 			log.Fatalf("server read faild: %s\n", err)
