@@ -17,7 +17,9 @@ import (
 const BLOCK_SIZE = 1024
 const START_FLAG = "start-->"
 const END_FLAG = "<----end"
-const fileName = "test.zip"
+
+var fileName = toolbox.GetCurrentDirectory() + "/test.zip"
+
 const taskId = 11
 
 // 获取服务端发送的消息
