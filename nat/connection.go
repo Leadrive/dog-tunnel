@@ -20,6 +20,9 @@ const (
 
 	FecData byte = 1
 	FecOver byte = 2
+
+	// Rocky
+	TIMEOUT = 30000
 )
 
 var bDebug = flag.Bool("debug", false, "whether show nat pipe debug msg")
@@ -105,7 +108,7 @@ func DefaultKcpSetting() *KcpSetting {
 
 func newConn(sock *net.UDPConn, local, remote net.Addr, id int) *Conn {
 	sock.SetDeadline(time.Time{})
-	conn := &Conn{conn: sock, local: local, remote: remote, closed: false, quit: make(chan bool), tmp: make([]byte, CacheBuffSize*2), tmp2: make([]byte, CacheBuffSize), sendChan: make(chan string, 10), checkCanWrite: make(chan chan bool), readChan: make(chan cache), overTime: time.Now().Unix() + 30000, fecWriteId: 0, fecSendC: 0}
+	conn := &Conn{conn: sock, local: local, remote: remote, closed: false, quit: make(chan bool), tmp: make([]byte, CacheBuffSize*2), tmp2: make([]byte, CacheBuffSize), sendChan: make(chan string, 10), checkCanWrite: make(chan chan bool), readChan: make(chan cache), overTime: time.Now().Unix() + TIMEOUT, fecWriteId: 0, fecSendC: 0}
 	debug("create", id)
 	conn.kcp = ikcp.Ikcp_create(uint32(id), conn)
 	conn.kcp.Output = udp_output
@@ -246,17 +249,18 @@ out:
 					}
 				}
 			}
-			if time.Now().Unix() > c.overTime {
+			// Rocky注释
+			/*if time.Now().Unix() > c.overTime {
 				log.Println("overtime close", c.LocalAddr().String(), c.RemoteAddr().String())
 				go c.Close()
 			} else {
-				time.AfterFunc(300*time.Millisecond, func() {
+				time.AfterFunc(TIMEOUT*time.Millisecond, func() {
 					select {
 					case ping <- struct{}{}:
 					case <-c.quit:
 					}
 				})
-			}
+			}*/
 		case cache := <-c.readChan:
 			for {
 				const buffSize = CacheBuffSize
@@ -284,7 +288,7 @@ out:
 				break
 			}
 		case b := <-recvChan:
-			c.overTime = time.Now().Unix() + 30000
+			c.overTime = time.Now().Unix() + TIMEOUT
 			if c.fecR != nil {
 				if len(b) <= 7 {
 					break
