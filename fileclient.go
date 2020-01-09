@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	toolbox "code.aliyun.com/luocanqi/go_toolbox"
@@ -21,13 +22,13 @@ const taskId = 11
 
 // 获取服务端发送的消息
 func clientRead(conn net.Conn) int {
-	buf := make([]byte, 5)
+	buf := make([]byte, 12)
 	n, err := conn.Read(buf)
 	if err != nil {
 		log.Fatalf("receive server info faild: %s\n", err)
 	}
 	// string conver int
-	off, err := strconv.Atoi(string(buf[:n]))
+	off, err := strconv.Atoi(strings.TrimSpace(string(buf[:n])))
 	if err != nil {
 		log.Fatalf("string conver int faild: %s\n", err)
 	}
@@ -38,7 +39,7 @@ func clientRead(conn net.Conn) int {
 func clientWrite(conn net.Conn, data []byte) {
 	_, err := conn.Write(data)
 	if err != nil {
-		log.Fatalf("send 【%s】 content faild: %s\n", string(data), err)
+		log.Fatalf("send content faild: %s\n", err)
 	}
 	// log.Printf("send 【%s】 content success\n", string(data))
 }
@@ -62,10 +63,10 @@ func clientConn(conn net.Conn) {
 
 	// send file content
 	fp, err := os.OpenFile(fileName, os.O_RDONLY, 0755)
+	defer fp.Close()
 	if err != nil {
 		log.Fatalf("open file faild: %s\n", err)
 	}
-	defer fp.Close()
 
 	// set file seek
 	// 设置从哪里开始读取文件内容
@@ -82,8 +83,8 @@ func clientConn(conn net.Conn) {
 		if err != nil {
 			if err == io.EOF {
 				// 如果已经读取完文件内容
-				// 就发送'<--end'消息通知服务端，文件内容发送完了
-				time.Sleep(time.Second * 1)
+				// 就发送'<----end'消息通知服务端，文件内容发送完了
+				// time.Sleep(time.Second * 1)
 				clientWrite(conn, []byte(END_FLAG))
 				log.Println("send all content, now quit")
 				break
@@ -93,7 +94,7 @@ func clientConn(conn net.Conn) {
 		// 发送文件内容到服务端
 
 		fileLen += int64(n)
-		if displayCount > 10 {
+		if displayCount > 100 {
 			log.Printf("Send fileLen=%d", fileLen)
 			displayCount = 0
 		}
