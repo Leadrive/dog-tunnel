@@ -88,7 +88,7 @@ func clientConn(conn net.Conn) {
 				// 就发送'<----end'消息通知服务端，文件内容发送完了
 				// time.Sleep(time.Second * 1)
 				clientWrite(conn, []byte(END_FLAG))
-				log.Println("send all content, now quit")
+				log.Printf("send all content, now quit, n=%d", n)
 				break
 			}
 			log.Fatalf("read file err: %s\n", err)
